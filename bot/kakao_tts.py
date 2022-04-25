@@ -21,6 +21,8 @@ class KakaoTTS:
             "Content-Type": "application/xml",
             "Authorization": f"KakaoAK {self.rest_key}"
         }
+        # TODO: 카카오 문자열 제한 두기
+        self.limits = 0
 
     async def get(self, text, types=0):
         if self.use_api is False:

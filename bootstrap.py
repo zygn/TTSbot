@@ -25,7 +25,8 @@ def check_config_file():
         }
 
         ini['KAKAO'] = {
-            'REST_API': 'rest api here'
+            'USE_API': 'yes',
+            'REST_API_KEY': 'rest api key here'
         }
 
         with open('config.ini', 'w') as f:
@@ -59,6 +60,16 @@ def check_config(config):
         raise ValueError('Bind channel id is not defined')
     if config.get('DEFAULT', 'BIND_CHANNEL') == 'channel id here':
         raise ValueError('Bind channel id is not defined')
+
+    if config.get('KAKAO', 'USE_API') is None:
+        raise ValueError('Kakao api setting is not defined')
+    if config.get('KAKAO', 'USE_API') is True:
+        if config.get('KAKAO', 'REST_API_KEY') is None:
+            raise ValueError('Kakao api key value is not defined')
+        if config.get('KAKAO', 'REST_API_KEY') == "":
+            raise ValueError('Kakao api key value is not defined')
+        if config.get('KAKAO', 'REST_API_KEY') == "rest api key here":
+            raise ValueError('Kakao api key value is not defined')
 
     return config
 
