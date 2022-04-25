@@ -13,8 +13,6 @@ res = bootstrap.result()
 conf = res['config']
 ffmpeg_executable = res['ffmpeg']
 
-
-
 log = logging.getLogger("Bot")
 formatter = logging.Formatter(fmt="[%(levelname)s] :: %(message)s")
 stream_handler = logging.StreamHandler()
@@ -28,8 +26,8 @@ log.setLevel(conf.get('DEFAULT', 'LOG_LEVEL'))
 
 bot = commands.Bot(command_prefix="")
 
-gtts = GoogleTTS(conf.get('DEFAULT', 'CACHE_PATH') + '/Google')
-ktts = KakaoTTS(conf.get('DEFAULT', 'CACHE_PATH') + '/Kakao', conf.get('KAKAO','REST_API'))
+gtts = GoogleTTS(conf)
+ktts = KakaoTTS(conf)
 
 voice_queue = []
 

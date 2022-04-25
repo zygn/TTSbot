@@ -7,10 +7,11 @@ from .file import FileSanity
 
 class KakaoTTS:
 
-    def __init__(self, dirname, rest_key):
-        self.dirname = dirname
+    def __init__(self, conf):
+        self.dirname = conf.get('DEFAULT', 'CACHE_PATH') + '/Kakao'
         self.f = FileSanity()
-        self.rest_key = rest_key
+        self.use_api = conf.getboolean('KAKAO', 'USE_API')
+        self.rest_key = conf.get('KAKAO', 'REST_API_KEY')
         self.voices = ['WOMAN_READ_CALM', 'MAN_READ_CALM', 'WOMAN_DIALOG_BRIGHT', 'MAN_DIALOG_BRIGHT']
 
         self.base_url = "https://kakaoi-newtone-openapi.kakao.com/v1/synthesize"
@@ -21,6 +22,9 @@ class KakaoTTS:
         }
 
     async def get(self, text, types=0):
+        if self.use_api is False:
+            return False
+
         if text == "":
             return False
 

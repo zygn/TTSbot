@@ -6,8 +6,8 @@ from .file import FileSanity
 
 class GoogleTTS:
     
-    def __init__(self, dirname):
-        self.dir = dirname
+    def __init__(self, conf):
+        self.dir = conf.get('DEFAULT', 'CACHE_PATH') + '/Google'
         self.f = FileSanity()
 
 
