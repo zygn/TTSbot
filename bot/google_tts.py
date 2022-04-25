@@ -2,6 +2,7 @@ from gtts import gTTS
 import os
 
 from .file import FileSanity
+from .exceptions import NoMessageError, LengthTooLong
 
 
 class GoogleTTS:
@@ -13,7 +14,10 @@ class GoogleTTS:
 
     def get(self, text, lang="ko"):
         if text == "":
-            return False
+            raise NoMessageError
+
+        if len(text) > 99:
+            raise LengthTooLong
 
         filename = self.f.correction(text) + ".mp3"
 

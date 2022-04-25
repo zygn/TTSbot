@@ -3,6 +3,7 @@ import aiofiles
 import os
 
 from .file import FileSanity
+from .exceptions import *
 
 
 class KakaoTTS:
@@ -23,10 +24,13 @@ class KakaoTTS:
 
     async def get(self, text, types=0):
         if self.use_api is False:
-            return False
+            raise APINotUsingError
 
         if text == "":
-            return False
+            raise NoMessageError
+
+        if len(text) > 99:
+            raise LengthTooLong
 
         filename = self.f.correction(text) + ".wav"
 
@@ -46,10 +50,10 @@ class KakaoTTS:
 
                 return filepath
             else:
-                print(resp.status_code)
-                print(resp.content)
+                print(resp.status_code, resp.content)
+                raise APIReturnError
 
-                return False
+        return False
 
     def create_ssml(self, text: str, voice_types: int):
         send_data = f'<speak><voice name="{self.voices[voice_types]}">{text}</voice></speak>'.encode('utf-8')
