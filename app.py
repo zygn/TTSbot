@@ -36,8 +36,27 @@ voice_queue = []
 
 @bot.event
 async def on_ready():
+    global conf
+
+    # 857704912460054531
+
+    ch = conf.get('DEFAULT', 'BIND_CHANNEL')
     log.info(f"Logged in as {bot.user.name}/{bot.user.id}")
     log.info(f"Join URL: https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot")
+
+    bind = None
+    for guild in bot.guilds:
+        for category in guild.categories:
+            for channel in category.channels:
+                if str(channel.id) == str(ch):
+                    log.info(f"Running at {guild.name}")
+                    log.info(f"Bind Text Channel : {channel.name}")
+                    bind = channel
+                    break
+
+    if not bind:
+        log.error(f"No Bound Text channel. check configuration file!")
+
 
 @bot.event
 async def on_message(message):
@@ -48,12 +67,14 @@ async def on_message(message):
     if str(message.channel.id) == str(ch):
         await bot.process_commands(message)
 
+
 @bot.command()
 async def help(ctx):
     log.debug(f"{ctx.author}/Help")
 
     e = discord.Embed(title="help")
-    e.set_author(name=f"{ctx.me}", icon_url=ctx.me.default_avatar.url)
+    e.set_author(name=f"{ctx.me}")
+
     e.add_field(name="TTS 명령어", value="`m` : 남성 한국어 음성 \n`w`: 여성 한국어 음성 \n`en`: 여성 영어 음성", inline=True)
     e.add_field(name="사용법", value="`m 오우 스폰지밥 왜 그랬어요` \n`w 오우 스폰지밥 왜 그랬어요` \n`en Oh, Spongebob why did you do that`", inline=True)
     caution_txt = "1. **여성 한국어 음성 **(`w`) 명령어는, Kakao사의 AI를 사용하고 있어 하루 최대 사용가능한 문자 길이가 **20,000**자로 제한됩니다. \n"
@@ -152,9 +173,21 @@ async def voice_send(ctx, file_path):
         )
         ctx.voice_client.is_playing()
     #TODO: 에러 종류 구분
-    except:
-        await ctx.send("누군가 사용중 입니다. 잠시후에 다시 시도해주세요. ", delete_after=5)
+    except discord.opus.OpusNotLoaded:
+        log.error(f"Opus is Not loaded.")
         return
+
+    except Exception as e:
+        await ctx.send("누군가 사용중 입니다. 잠시후에 다시 시도해주세요. ", delete_after=5)
+        log.error(f"Raised Exception: {e}")
+        return
+
+
+    ctx.voice_client.play(
+        voice_object,
+        after=None
+    )
+    ctx.voice_client.is_playing()
 
 
 
