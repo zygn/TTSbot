@@ -1,25 +1,16 @@
+import bootstrap
+
 import discord
 from discord.ext import commands
-
-import logging
 
 from bot.kakao_tts import KakaoTTS
 from bot.google_tts import GoogleTTS
 from bot.exceptions import *
+from bot.log import *
 
-import bootstrap
-
-
-res = bootstrap.result()
-conf = res['config']
-ffmpeg_executable = res['ffmpeg']
-
-log = logging.getLogger("Bot")
-formatter = logging.Formatter(fmt="[%(levelname)s] :: %(message)s")
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(formatter)
-log.addHandler(stream_handler)
-log.setLevel(conf.get('DEFAULT', 'LOG_LEVEL'))
+conf = bootstrap.results['config']
+ffmpeg_executable = bootstrap.results['ffmpeg']
+log = logger_init("TTS", conf)
 
 
 ####################################################
@@ -70,7 +61,7 @@ async def on_message(message):
 
 @bot.command()
 async def help(ctx):
-    log.debug(f"{ctx.author}/Help")
+    log.info(f"[{ctx.author}|help]")
 
     e = discord.Embed(title="help")
     e.set_author(name=f"{ctx.me}")
@@ -88,7 +79,7 @@ async def help(ctx):
 
 @bot.command()
 async def m(ctx, *, msg):
-    log.debug(f"{ctx.author}/Google/KR/{msg}")
+    log.info(f'[{ctx.author}|Google|KR] "{msg}"')
 
     try:
         tts_res = gtts.get(msg)
@@ -107,7 +98,8 @@ async def m(ctx, *, msg):
 
 @bot.command()
 async def w(ctx, *, msg):
-    log.debug(f"{ctx.author}/Kakao/KR/{msg}")
+    log.info(f'[{ctx.author}|Kakao|KR] "{msg}"')
+
     try:
         tts_res = await ktts.get(msg)
     except LengthTooLong:
@@ -131,7 +123,8 @@ async def w(ctx, *, msg):
 
 @bot.command()
 async def en(ctx, *, msg):
-    log.debug(f"{ctx.author}/Google/EN/{msg}")
+    log.info(f'[{ctx.author}|Google|EN] "{msg}"')
+
     try:
         tts_res = gtts.get(msg, lang='en')
     except LengthTooLong:
@@ -154,13 +147,17 @@ async def voice_send(ctx, file_path):
 
     voice_object = discord.FFmpegPCMAudio(
         executable=ffmpeg_executable,
+        options='-loglevel panic',
         source=file_path,
     )
+    log.debug(f"Voice object created: {voice_object}")
 
     if ctx.voice_client is None:
         try:
             destination = ctx.author.voice.channel
+            log.debug(f"Connecting voice channel to {destination.id}")
             ctx.voice_client.voice = await destination.connect()
+            log.debug(f"Connected voice channel to {destination.id}")
 
         except AttributeError:
             await ctx.send("음성 채널에 아무도 없는것 같습니다. 음성채널에 입장해 주세요. ", delete_after=15)
@@ -171,6 +168,7 @@ async def voice_send(ctx, file_path):
             voice_object,
             after=None
         )
+        log.debug(f"Player playing {voice_object}")
         ctx.voice_client.is_playing()
     #TODO: 에러 종류 구분
     except discord.opus.OpusNotLoaded:
