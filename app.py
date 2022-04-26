@@ -183,12 +183,6 @@ async def voice_send(ctx, file_path):
         return
 
 
-    ctx.voice_client.play(
-        voice_object,
-        after=None
-    )
-    ctx.voice_client.is_playing()
-
 
 
 
