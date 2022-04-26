@@ -1,6 +1,25 @@
 import os
 from configparser import ConfigParser
 
+
+def check_module_installed():
+    try:
+        import aiofiles
+        import asyncio
+        import gtts
+        import httpx
+        import discord
+
+    except ModuleNotFoundError:
+        print("Module Not found. Try to install libraries...")
+        import subprocess
+        command = ['pip', 'install', '-r', 'requirements.txt', '-U']
+        do = subprocess.Popen(command)
+        do.wait()
+        print("Done. restart app.py")
+        exit()
+
+
 def check_os_type():
     print("Check operating system type...")
     if os.name == 'posix':
@@ -11,6 +30,7 @@ def check_os_type():
         ffmpeg_executable = 'ffmpeg'
 
     return ffmpeg_executable
+
 
 def check_config_file():
     print("Check configuration file...")
@@ -39,6 +59,7 @@ def check_config_file():
         ini.read('config.ini')
 
         return ini
+
 
 def check_config(config):
     print("Check configuration consistency...")
@@ -73,6 +94,7 @@ def check_config(config):
 
     return config
 
+
 def check_dir_structure(config):
     print("Check directory is exist...")
     # check folder exist
@@ -87,6 +109,8 @@ def check_dir_structure(config):
 
 
 def result():
+    check_module_installed()
+
     res = {}
 
     res['ffmpeg'] = check_os_type()
@@ -94,7 +118,8 @@ def result():
     try:
         conf = check_config_file()
     except FileNotFoundError:
-        print("No configuration files. \nSo, configuration file is auto-generated. you should edit it and run it again.")
+        print(
+            "No configuration files. \nSo, configuration file is auto-generated. you should edit it and run it again.")
         exit()
 
     check_dir_structure(conf)
@@ -109,4 +134,6 @@ def result():
 
     return res
 
+
+results = result()
 
