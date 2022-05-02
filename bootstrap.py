@@ -103,9 +103,13 @@ def check_dir_structure(config):
 
     if not os.path.exists(config.get('DEFAULT', 'CACHE_PATH') + '/Google'):
         os.makedirs(config.get('DEFAULT', 'CACHE_PATH') + '/Google')
+        for i in range(0, 4):
+            os.makedirs(config.get('DEFAULT', 'CACHE_PATH') + '/Google/' + str(i))
 
     if not os.path.exists(config.get('DEFAULT', 'CACHE_PATH') + '/Kakao'):
         os.makedirs(config.get('DEFAULT', 'CACHE_PATH') + '/Kakao')
+        for i in range(0, 4):
+            os.makedirs(config.get('DEFAULT', 'CACHE_PATH') + '/Kakao/' + str(i))
 
 
 def result():
