@@ -35,11 +35,11 @@ class KakaoTTS:
             raise LengthTooLong
 
         filename = self.f.correction(text) + ".wav"
+        dirpath = os.path.join(self.dirname, str(types))
+        filepath = os.path.join(dirpath, filename)
 
-        if self.f.isexist(self.dirname, filename):
-            return filename
-
-        filepath = os.path.join(self.dirname, filename)
+        if self.f.isexist(dirpath, filename):
+            return filepath
 
         data = self.create_ssml(text, types)
 
