@@ -3,3 +3,4 @@ config.*
 .idea
 voice_cache
 *.log
+*.json
