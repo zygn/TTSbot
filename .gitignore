@@ -4,3 +4,4 @@ config.*
 *.log
 *.json
 /_legacy/
+voice_cache
