@@ -1,6 +1,6 @@
 __pycache__
 config.*
 .idea
-_legacy
 *.log
 *.json
+/_legacy/

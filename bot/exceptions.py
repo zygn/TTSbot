@@ -18,3 +18,5 @@ class APINotUsingError(Exception):
     pass
 
 
+class QueueMaxLengthError(Exception):
+    pass

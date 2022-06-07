@@ -36,8 +36,8 @@ class UserDB:
         if user_id not in self.data:
             self.data[user_id] = {
                 'name': None,
-                'set_voice': "Google",
-                'lang': 0,
+                'set_voice': "Default",
+                'lang': 'ko',
             }
 
         if name:
