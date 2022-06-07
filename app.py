@@ -162,7 +162,7 @@ async def list(ctx, *, msg):
 
 
 @bot.command(aliases=['t', 'ㅅ', '`'])
-async def t(ctx, *, msg):
+async def _t(ctx, *, msg):
     
     uid = str(ctx.author.id)
 
@@ -183,41 +183,8 @@ async def t(ctx, *, msg):
             await ctx.send(tts_res[1], delete_after=15)
             return
         else:
-            try:
-                voices.append(tts_res[1])
-                await voice_send(ctx)
-            except QueueMaxLengthError:
-                await ctx.send(f"너무 많은 요청을 처리중입니다. **{int(voices.left_durations(divider=2))}초**에 다시 시도 해주세요. ", delete_after=5)
-
-
-"""
-@bot.command(name='ㅅ')
-async def t_kr(ctx, *, msg):
-
-    uid = str(ctx.author.id)
-
-    if not users.get(uid):
-        users.set(uid, name=ctx.author)
-
-    set_voice = users.get_set_voice(uid)
-    set_lang = users.get_lang(uid)
-
-    log.info(f'[{ctx.author}|{set_voice}] "{msg}"')
-
-    if not (set_voice and set_lang):
-        await ctx.send("유저 정보가 없습니다. `set` 명령어를 사용하여 등록해주세요. \n자세한 정보는 help 명령어로 확인해주세요.", delete_after=15)
-        return
-    else:
-        tts_res = await tts_resolver(set_voice, set_lang, msg)
-        if not tts_res:
-            await ctx.send("알 수 없는 에러가 발생하였습니다. 개발자에게 문의 해주세요.", delete_after=15)
-            return
-        elif tts_res[0] is False:
-            await ctx.send(tts_res[1], delete_after=15)
-            return
-        else:
             await voice_send(ctx, tts_res[1])
-"""
+
 
 
 @bot.command()
@@ -356,13 +323,11 @@ async def tts_resolver(company, lang, msg):
         return [False, res]
 
 
-async def voice_send(ctx):
+async def voice_send(ctx, res):
     global ffmpeg_executable
 
-    voice_file = await voices.get()
-
-    if voice_file is None:
-        return
+    uid = str(ctx.author.id)
+    voice_file = res
 
     voice_object = discord.FFmpegPCMAudio(
         executable=ffmpeg_executable,
@@ -379,32 +344,55 @@ async def voice_send(ctx):
             log.debug(f"Connected voice channel to {destination.id}")
 
         except AttributeError:
-            await ctx.send("음성 채널에 아무도 없는것 같습니다. 음성채널에 입장해 주세요. ", delete_after=15)
+            await ctx.send(f"<@{uid}> 음성 채널에 아무도 없는것 같습니다. 음성채널에 입장해 주세요. ", delete_after=15)
             return
 
     try:
-        ctx.voice_client.play(
-            voice_object,
-            after=asyncio.get_running_loop().create_task(play_next(ctx))
-        )
-        log.debug(f"Player playing {voice_object}")
-        ctx.voice_client.is_playing()
+        if not ctx.voice_client.is_playing():
+            ctx.voice_client.play(
+                voice_object,
+                after=lambda e: play_next(ctx)
+            )
+            log.debug(f"Player playing {voice_object}")
+            ctx.voice_client.is_playing()
+        else:
+            try:
+                voices.append(voice_file)
+                log.debug("Voice object queued.")
+            except QueueMaxLengthError:
+                t = int(voices.left_durations(divider=2))
+                await ctx.send(f"<@{uid}> 너무 많은 요청을 처리중입니다. **{t}초**에 다시 시도 해주세요. ", delete_after=t)
+
+
     # TODO: 에러 종류 구분
     except discord.opus.OpusNotLoaded:
         log.error(f"Opus is Not loaded.")
         return
 
-    except Exception as e:
-        await ctx.send("누군가 사용중 입니다. 잠시후에 다시 시도해주세요. ", delete_after=5)
-        log.error(f"Raised Exception: {e}")
-        return
+    # except Exception as e:
+    #     await ctx.send("누군가 사용중 입니다. 잠시후에 다시 시도해주세요. ", delete_after=5)
+    #     log.error(f"Raised Exception: {e}")
+    #     return
 
 
-async def play_next(ctx):
-    global voices
-    log.debug("Created task loop.")
-    if not voices.is_empty() and not ctx.voice_client.is_playing():
-        await voice_send(ctx)
+def play_next(ctx):
+
+    log.debug(f"Created task loop. Remain {len(voices.queue)} voices.")
+
+    if not voices.is_empty():
+        voice_object = discord.FFmpegPCMAudio(
+            executable=ffmpeg_executable,
+            options='-loglevel panic',
+            source=voices.get(),
+        )
+        log.debug(f"Voice object created: {voice_object}")
+
+        ctx.voice_client.play(
+            voice_object,
+            after=lambda e: play_next(ctx)
+        )
+        log.debug(f"Player playing {voice_object}")
+
     log.debug("Closed task loop.")
 
 bot.run(conf.get('DEFAULT', 'TOKEN'))

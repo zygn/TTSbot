@@ -1,11 +1,11 @@
 import collections
 import mutagen
 
-from exceptions import QueueMaxLengthError
+from .exceptions import QueueMaxLengthError
 
 class Voices:
     def __init__(self):
-        self.queue = collections.deque(maxlen=10)
+        self.queue = collections.deque(maxlen=5)
 
     def get(self):
         if len(self.queue) == 0:
@@ -14,7 +14,7 @@ class Voices:
             return self.queue.popleft()
 
     def append(self, obj):
-        if len(self.queue) >= 10:
+        if len(self.queue) >= 5:
             raise QueueMaxLengthError
 
         if len(self.queue) == 0:
