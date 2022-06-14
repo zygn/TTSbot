@@ -3,14 +3,20 @@ from configparser import ConfigParser
 
 
 def check_module_installed():
+
     try:
+        print("[1/5] Check module installed...", end="")
         import aiofiles
+        import mutagen
+        import google.cloud
         import asyncio
         import gtts
         import httpx
         import discord
+        print("✅")
 
     except ModuleNotFoundError:
+        print("❌")
         print("Module Not found. Try to install libraries...")
         import subprocess
         command = ['pip', 'install', '-r', 'requirements.txt', '-U']
@@ -21,20 +27,21 @@ def check_module_installed():
 
 
 def check_os_type():
-    print("Check operating system type...")
+    print("[2/5] Check operating system type...", end="")
     if os.name == 'posix':
         ffmpeg_executable = 'ffmpeg'
     elif os.name == 'nt':
         ffmpeg_executable = 'bin/ffmpeg.exe'
     else:
         ffmpeg_executable = 'ffmpeg'
-
+    print("✅")
     return ffmpeg_executable
 
 
 def check_config_file():
-    print("Check configuration file...")
+    print("[3/5] Check configuration file...",end="")
     if not os.path.exists('config.ini'):
+        print("❌")
         ini = ConfigParser()
 
         ini['DEFAULT'] = {
@@ -55,11 +62,32 @@ def check_config_file():
         raise FileNotFoundError
 
     else:
+        print("✅")
         ini = ConfigParser()
         ini.read('config.ini')
 
         return ini
 
+
+def check_dir_structure(config):
+    print("[4/5] Check directory is exist...", end="")
+    # check folder exist
+    if not os.path.exists(config.get('DEFAULT', 'CACHE_PATH')):
+        os.makedirs(config.get('DEFAULT', 'CACHE_PATH'))
+        print("\tbase: created")
+
+    if not os.path.exists(config.get('DEFAULT', 'CACHE_PATH') + '/GCP'):
+        os.makedirs(config.get('DEFAULT', 'CACHE_PATH') + '/GCP')
+        print("\tGCP: created")
+
+    if not os.path.exists(config.get('DEFAULT', 'CACHE_PATH') + '/Kakao'):
+        os.makedirs(config.get('DEFAULT', 'CACHE_PATH') + '/Kakao')
+        print("\tKakao: created")
+
+    if not os.path.exists(config.get('DEFAULT', 'CACHE_PATH') + '/Default'):
+        os.makedirs(config.get('DEFAULT', 'CACHE_PATH') + '/Default')
+        print("\tDefault: created")
+    print("✅")
 
 def check_config(config):
     print("Check configuration consistency...")
@@ -95,21 +123,7 @@ def check_config(config):
     return config
 
 
-def check_dir_structure(config):
-    print("Check directory is exist...")
-    # check folder exist
-    if not os.path.exists(config.get('DEFAULT', 'CACHE_PATH')):
-        os.makedirs(config.get('DEFAULT', 'CACHE_PATH'))
 
-    if not os.path.exists(config.get('DEFAULT', 'CACHE_PATH') + '/GCP'):
-        os.makedirs(config.get('DEFAULT', 'CACHE_PATH') + '/GCP')
-        
-
-    if not os.path.exists(config.get('DEFAULT', 'CACHE_PATH') + '/Kakao'):
-        os.makedirs(config.get('DEFAULT', 'CACHE_PATH') + '/Kakao')
-
-    if not os.path.exists(config.get('DEFAULT', 'CACHE_PATH') + '/Default'):
-        os.makedirs(config.get('DEFAULT', 'CACHE_PATH') + '/Default')
 
 
     
