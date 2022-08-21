@@ -92,6 +92,9 @@ class DatabaseModel:
         return self.users[user_id]
 
     def get_user(self, user_id: str):
+        if not isinstance(user_id, str):
+            user_id = str(user_id)
+
         if user_id not in self.users:
             self.create_user(user_id)
         self._save()
