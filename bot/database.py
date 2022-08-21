@@ -31,6 +31,9 @@ class DatabaseModel:
         return self.__dict__ == other.__dict__
 
     def _auto_load(self):
+        if not os.path.exists(f"guilds/{self.guild_id}/voice"):
+            os.makedirs(f"guilds/{self.guild_id}/voice")
+
         paths = f"guilds/{self.guild_id}/guild.json"
 
         if os.path.exists(paths) is False:
