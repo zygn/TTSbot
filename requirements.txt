@@ -2,4 +2,4 @@ asyncio~=3.4.3
 pynacl~=1.5.0
 nextcord~=2.1.0
 nextcord[voice]~=2.1.0
-google-cloud-texttospeech~=2.11.ß0
+google-cloud-texttospeech~=2.11.0
