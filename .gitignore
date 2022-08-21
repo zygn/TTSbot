@@ -4,4 +4,9 @@ config.*
 *.log
 *.json
 /_legacy/
+/__pycache__/
+/guilds/
+config.ini
+guild.json
+
 voice_cache
