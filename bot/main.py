@@ -318,18 +318,18 @@ class BotCommands(commands.Cog):
             interaction: Interaction,
             pitch: str = SlashOption(
                 name="pitch",
-                description="원하는 피치를 입력 해 주세요. [0.01 ~ 16.0]"
+                description="원하는 피치를 입력 해 주세요. [-16.0 ~ 16.0]"
             )
     ):
         try:
             pitch = float(pitch)
         except ValueError:
-            await interaction.response.send_message("올바른 응답이 아닙니다. 실수 범위를 입력 해 주세요. [0.01 ~ 16.0]", delete_after=10,
+            await interaction.response.send_message("올바른 응답이 아닙니다. 실수 범위를 입력 해 주세요. [-16.0 ~ 16.0]", delete_after=10,
                                                     ephemeral=True)
             return
 
-        if pitch < 0.01 or pitch > 16.0:
-            await interaction.response.send_message("올바른 응답이 아닙니다. 해당 범위안의 값을 입력 해 주세요. [0.01 ~ 16.0]", delete_after=10,
+        if pitch < -16.0 or pitch > 16.0:
+            await interaction.response.send_message("올바른 응답이 아닙니다. 해당 범위안의 값을 입력 해 주세요. [-16.0 ~ 16.0]", delete_after=10,
                                                     ephemeral=True)
             return
 
