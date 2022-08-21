@@ -10,7 +10,6 @@ from bot.synthesize import Synthesize
 
 
 def os_compability():
-
     if os.name == 'nt':
         ffmpeg_executable = 'bin/ffmpeg.exe'
         nextcord.opus.load_opus('bin/opus.dll')
@@ -45,6 +44,15 @@ class BotCommands(commands.Cog):
         if serve.prefix_use:
             if text.startswith(serve.prefix):
                 text = text[len(serve.prefix):]
+
+        if text.startswith("<#") and text.endswith(">"):
+            return
+        if text.startswith("<@") and text.endswith(">"):
+            return
+        if text.startswith("<:") and text.endswith(">"):
+            return
+
+        print(f"[{author.name}] '{text}'")
 
         result, path = self.synth.synthesize_text(text, user, author.guild.id)
 
@@ -81,19 +89,6 @@ class BotCommands(commands.Cog):
             )
         else:
             self.voice_queue.append(voice_object)
-
-        # try:
-        #     if not voice_client.is_playing():
-        #         voice_client.play(
-        #             voice_object,
-        #             after=lambda e: self.play_next(voice_client)
-        #         )
-        #     else:
-        #         self.voice_queue.append(voice_object)
-        #
-        # except nextcord.opus.OpusNotLoaded as error:
-        #     print(error)
-        #     return
 
     def play_next(self, voice_client: nextcord.VoiceClient):
 
