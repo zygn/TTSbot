@@ -82,6 +82,9 @@ class DatabaseModel:
         self._save()
 
     def create_user(self, user_id: str):
+        if not isinstance(user_id, str):
+            user_id = str(user_id)
+
         self.users[user_id] = {
             "language": self.default_language,
             "voice": self.default_voice,
@@ -100,19 +103,30 @@ class DatabaseModel:
         self._save()
         return self.users[user_id]
 
-
     def set_user_language(self, user_id: str, language: str):
+        if not isinstance(user_id, str):
+            user_id = str(user_id)
+
         self.users[user_id]["language"] = language
         self._save()
 
     def set_user_voice(self, user_id: str, voice: str):
+        if not isinstance(user_id, str):
+            user_id = str(user_id)
+
         self.users[user_id]["voice"] = voice
         self._save()
 
     def set_user_speed(self, user_id: str, speed: float):
+        if not isinstance(user_id, str):
+            user_id = str(user_id)
+
         self.users[user_id]["speed"] = speed
         self._save()
 
     def set_user_pitch(self, user_id: str, pitch: float):
+        if not isinstance(user_id, str):
+            user_id = str(user_id)
+
         self.users[user_id]["pitch"] = pitch
         self._save()
