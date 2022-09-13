@@ -2,6 +2,12 @@ import google.cloud.texttospeech as texttospeech
 import os
 import hashlib
 
+from bot.logger import logger_init
+
+
+log = logger_init(__name__)
+
+
 
 class Synthesize:
     def __init__(self, conf):
@@ -10,6 +16,7 @@ class Synthesize:
         self.voices = self._voice_list()
 
     def _voice_list(self):
+        log.debug("Generating voice lists.")
         voices = self.client.list_voices()
         voice_data = {}
         for voice in voices.voices:
@@ -27,8 +34,14 @@ class Synthesize:
         return voice_data
 
     def _md5_generate(self, text, user_model: dict):
+
         btext = f"{user_model['voice']}|{text}|{user_model['speed']}|{user_model['pitch']}"
-        return hashlib.md5(btext.encode('utf-8')).hexdigest()
+
+        log.debug(f"Create md5 hash value from `{btext}`")
+        h = hashlib.md5(btext.encode('utf-8')).hexdigest()
+
+        log.debug(f"Hash value: {h}")
+        return h
 
     def get_language(self):
         return sorted(list(self.voices.keys()))
@@ -40,6 +53,7 @@ class Synthesize:
         file_path = f"guilds/{server_id}/voice/{self._md5_generate(text, user_model)}.mp3"
 
         if os.path.exists(file_path):
+            log.debug("File already exists. return file path.")
             return True, file_path
 
         try:
@@ -63,10 +77,11 @@ class Synthesize:
             with open(file_path, 'wb') as out:
                 out.write(response.audio_content)
 
+            log.debug("Created voice file successfully.")
             return True, file_path
 
         except Exception as e:
-            print(e)
+            log.error(f"Failed create voice file. \n\tcause: {e}")
             return False, None
 
 

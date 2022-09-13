@@ -1,23 +1,39 @@
 from collections import deque
 import os
 import nextcord
+import re
 
 from nextcord import Interaction, SlashOption, Intents, Message
 from nextcord.ext import commands
 
 from bot.database import DatabaseModel
 from bot.synthesize import Synthesize
+from bot.logger import logger_init
 
 
 def os_compability():
     if os.name == 'nt':
         ffmpeg_executable = 'bin/ffmpeg.exe'
-        nextcord.opus.load_opus('bin/opus.dll')
     else:
         ffmpeg_executable = 'ffmpeg'
-        # nextcord.opus.load_opus('/opt/homebrew/Lib/libopus.0.dylib')
 
     return ffmpeg_executable
+
+
+def recompile(input: str):
+    discord_embed = r'(<(@|#|:)\w+>)'
+    hyperlinks = r'((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*'
+    bot_prefix = r'![\w.\-]+'
+
+    res = re.match(bot_prefix, input) or re.match(hyperlinks, input) or re.match(discord_embed, input)
+
+    if res is not None:
+        return None
+    else:
+        return input
+
+
+log = logger_init(__name__)
 
 
 class BotCommands(commands.Cog):
@@ -45,17 +61,11 @@ class BotCommands(commands.Cog):
             if text.startswith(serve.prefix):
                 text = text[len(serve.prefix):]
 
-        if text.startswith("<#") and text.endswith(">"):
+        if recompile(text) is None:
+            log.debug(f"Message Ignored. message was detected in regular expression.")
             return
-        if text.startswith("<@") and text.endswith(">"):
-            return
-        if text.startswith("<:") and text.endswith(">"):
-            return
-        if text.startswith("http://") or text.startswith("https://"):
-            return 
-         
 
-        print(f"[{author.name}] '{text}'")
+        log.info(f"{author} '{text}'")
 
         result, path = self.synth.synthesize_text(text, user, author.guild.id)
 
@@ -71,14 +81,17 @@ class BotCommands(commands.Cog):
         voice_client = guild.voice_client
 
         if voice_client is None:
+            log.debug("No connection. Trying to connect to a voice channel")
             try:
                 destination = author.voice.channel
                 voice_client = await destination.connect()
 
             except AttributeError:
-                await channel.send("I can't join this channel")
+                log.error("No voice channel found. Join the voice channel and try again.")
+                await channel.send("No voice channel found. Join the voice channel and try again.")
                 return
 
+        log.debug("Creating voice object.")
         voice_object = nextcord.FFmpegPCMAudio(
             executable='ffmpeg',
             source=path,
@@ -86,16 +99,23 @@ class BotCommands(commands.Cog):
         )
 
         if not voice_client.is_playing():
-            voice_client.play(
-                voice_object,
-                after=lambda e: self.play_next(voice_client)
-            )
+            log.debug(f"Playing voice object {voice_object}")
+            try:
+                voice_client.play(
+                    voice_object,
+                    after=lambda e: self.play_next(voice_client)
+                )
+            except nextcord.opus.OpusNotLoaded:
+                log.error("Cannot load Opus library.")
+                await channel.send("Failed to load Opus library. Please contact the server admin.")
         else:
+            log.debug(f"Currently voice object playing. adding to queue. len={len(self.voice_queue) + 1}")
             self.voice_queue.append(voice_object)
 
     def play_next(self, voice_client: nextcord.VoiceClient):
 
         if len(self.voice_queue) > 0:
+            log.debug(f"Popping from voice object from queue.")
             voice_object = self.voice_queue.popleft()
             voice_client.play(voice_object, after=lambda e: self.play_next(voice_client))
 
@@ -114,7 +134,7 @@ class BotCommands(commands.Cog):
             arg: str = SlashOption(description="채팅 채널을 연결합니다. 채널의 ID를 입력하거나, #채널이름 을 입력하세요.")
     ):
         if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("권한이 없습니다.", delete_after=10, ephemeral=True)
+            await interaction.response.send_message("권한이 없습니다.", ephemeral=True)
             return
 
         serve = self.get_server(interaction.guild.id)
@@ -132,7 +152,7 @@ class BotCommands(commands.Cog):
         else:
             serve.set_server_bind_channel(int(channel_id))
             self.servers[interaction.guild.id] = serve
-            await interaction.response.send_message(f"<#{channel_id}> 채팅 채널이 연결되었습니다.", delete_after=10, ephemeral=True)
+            await interaction.response.send_message(f"<#{channel_id}> 채팅 채널이 연결되었습니다.", ephemeral=True)
             return
 
     @config.subcommand(description="설정 초기화", name="reset")
@@ -143,7 +163,7 @@ class BotCommands(commands.Cog):
             arg: str = SlashOption(description="유저 정보를 포함한 모든 정보가 초기화 됩니다. 계속하시겠습니까? [y/N]")
     ):
         if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("권한이 없습니다.", delete_after=10, ephemeral=True)
+            await interaction.response.send_message("권한이 없습니다.", ephemeral=True)
             return
 
         if arg.lower() == "y":
@@ -162,18 +182,18 @@ class BotCommands(commands.Cog):
             arg: str = SlashOption(description="접두사를 설정합니다. 사용하고 싶은 접두사를 입력하세요. 예시: $")
     ):
         if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("권한이 없습니다.", delete_after=10, ephemeral=True)
+            await interaction.response.send_message("권한이 없습니다.", ephemeral=True)
             return
 
         serve = self.get_server(interaction.guild.id)
 
         if arg is None:
-            await interaction.response.send_message("올바른 응답이 아닙니다.", delete_after=5, ephemeral=True)
+            await interaction.response.send_message("올바른 응답이 아닙니다.", ephemeral=True)
             return
         else:
             serve.set_server_prefix(arg)
             self.servers[interaction.guild.id] = serve
-            await interaction.response.send_message(f"접두사가 **[{arg}]** 로 설정되었습니다.", delete_after=5, ephemeral=True)
+            await interaction.response.send_message(f"접두사가 **[{arg}]** 로 설정되었습니다.", ephemeral=True)
             return
 
     @config.subcommand(description="접두사 사용 설정", name="prefix_use")
@@ -185,7 +205,7 @@ class BotCommands(commands.Cog):
                 description="접두사를 사용할지 설정합니다. [y/N]")
     ):
         if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("권한이 없습니다.", delete_after=10, ephemeral=True)
+            await interaction.response.send_message("권한이 없습니다.", ephemeral=True)
             return
 
         serve = self.get_server(interaction.guild.id)
@@ -193,12 +213,12 @@ class BotCommands(commands.Cog):
         if arg.lower().strip() in ['yes', 'y', 'true', '1']:
             serve.set_server_prefix_use(True)
             self.servers[interaction.guild.id] = serve
-            await interaction.response.send_message("접두사를 사용합니다.", delete_after=5, ephemeral=True)
+            await interaction.response.send_message("접두사를 사용합니다.", ephemeral=True)
             return
         else:
             serve.set_server_prefix_use(False)
             self.servers[interaction.guild.id] = serve
-            await interaction.response.send_message("접두사를 사용하지 않습니다.", delete_after=5, ephemeral=True)
+            await interaction.response.send_message("접두사를 사용하지 않습니다.", ephemeral=True)
             return
 
     @nextcord.slash_command(description="개인 정보 및 설정")
@@ -217,7 +237,7 @@ class BotCommands(commands.Cog):
         msgbox += f"피치 - {user['pitch']}\n"
         msgbox += "```"
 
-        await interaction.response.send_message(msgbox, delete_after=10, ephemeral=True)
+        await interaction.response.send_message(msgbox, ephemeral=True)
         return
 
     @my.subcommand(description="음성 설정", name="voice")
@@ -235,7 +255,7 @@ class BotCommands(commands.Cog):
         if user:
             serve.set_user_voice(interaction.user.id, voice)
             self.servers[interaction.guild.id] = serve
-            await interaction.response.send_message(f"음성이 **[{voice}]** 로 설정되었습니다.", delete_after=10, ephemeral=True)
+            await interaction.response.send_message(f"음성이 **[{voice}]** 로 설정되었습니다.", ephemeral=True)
 
     @my_voice.on_autocomplete("voice")
     async def my_voice_auto_complete(
@@ -269,7 +289,7 @@ class BotCommands(commands.Cog):
             serve.set_user_language(interaction.user.id, language)
             serve.set_user_voice(interaction.user.id, self.synth.get_names(language)[0])
             self.servers[interaction.guild.id] = serve
-            await interaction.response.send_message(f"언어가 **[{language}]** 로 설정되었습니다.", delete_after=10, ephemeral=True)
+            await interaction.response.send_message(f"언어가 **[{language}]** 로 설정되었습니다.", ephemeral=True)
             return
 
     @my_language.on_autocomplete("language")
@@ -297,12 +317,12 @@ class BotCommands(commands.Cog):
         try:
             speed = float(speed)
         except ValueError:
-            await interaction.response.send_message("올바른 응답이 아닙니다. 실수 범위를 입력 해 주세요. [0.25 ~ 4.0]", delete_after=10,
+            await interaction.response.send_message("올바른 응답이 아닙니다. 실수 범위를 입력 해 주세요. [0.25 ~ 4.0]",
                                                     ephemeral=True)
             return
 
         if speed < 0.25 or speed > 4.0:
-            await interaction.response.send_message("올바른 응답이 아닙니다. 해당 범위안의 값을 입력 해 주세요. [0.25 ~ 4.0]", delete_after=10,
+            await interaction.response.send_message("올바른 응답이 아닙니다. 해당 범위안의 값을 입력 해 주세요. [0.25 ~ 4.0]",
                                                     ephemeral=True)
             return
 
@@ -312,7 +332,7 @@ class BotCommands(commands.Cog):
         if user:
             serve.set_user_speed(interaction.user.id, speed)
             self.servers[interaction.guild.id] = serve
-            await interaction.response.send_message(f"속도가 **[{speed}]** 로 설정되었습니다.", delete_after=10, ephemeral=True)
+            await interaction.response.send_message(f"속도가 **[{speed}]** 로 설정되었습니다.", ephemeral=True)
             return
 
     @my.subcommand(description="피치 설정", name="pitch")
@@ -327,12 +347,12 @@ class BotCommands(commands.Cog):
         try:
             pitch = float(pitch)
         except ValueError:
-            await interaction.response.send_message("올바른 응답이 아닙니다. 실수 범위를 입력 해 주세요. [-16.0 ~ 16.0]", delete_after=10,
+            await interaction.response.send_message("올바른 응답이 아닙니다. 실수 범위를 입력 해 주세요. [-16.0 ~ 16.0]",
                                                     ephemeral=True)
             return
 
         if pitch < -16.0 or pitch > 16.0:
-            await interaction.response.send_message("올바른 응답이 아닙니다. 해당 범위안의 값을 입력 해 주세요. [-16.0 ~ 16.0]", delete_after=10,
+            await interaction.response.send_message("올바른 응답이 아닙니다. 해당 범위안의 값을 입력 해 주세요. [-16.0 ~ 16.0]",
                                                     ephemeral=True)
             return
 
@@ -342,7 +362,7 @@ class BotCommands(commands.Cog):
         if user:
             serve.set_user_pitch(interaction.user.id, pitch)
             self.servers[interaction.guild.id] = serve
-            await interaction.response.send_message(f"피치가 **[{pitch}]** 로 설정되었습니다.", delete_after=10, ephemeral=True)
+            await interaction.response.send_message(f"피치가 **[{pitch}]** 로 설정되었습니다.", ephemeral=True)
             return
 
     # EVENT #
@@ -357,6 +377,7 @@ class BotCommands(commands.Cog):
             self.servers[guild.id] = DatabaseModel(guild.id)
 
         print("-------------------------------")
+        log.debug("Bot is on ready.")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -367,13 +388,10 @@ class BotCommands(commands.Cog):
             return
         if message.guild.id not in self.servers:
             return
-
         if self.servers[message.guild.id].bind_channel is None:
             return
-
         if self.servers[message.guild.id].bind_channel == message.channel.id:
             await self.do_synthesize(message)
-            # print(f"{message.author.name}/{message.content}")
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
