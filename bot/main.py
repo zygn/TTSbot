@@ -51,6 +51,9 @@ class BotCommands(commands.Cog):
             return
         if text.startswith("<:") and text.endswith(">"):
             return
+        if text.startswith("http://") or text.startswith("https://"):
+            return 
+         
 
         print(f"[{author.name}] '{text}'")
 
