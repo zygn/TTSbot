@@ -392,7 +392,7 @@ class BotCommands(commands.Cog):
         await interaction.response.send_message(f"음성채널 <#!{destination.id}> 으로 이동되었습니다. ")
         return
 
-    @nextcord.slash_command(description="")
+
 
 
     # EVENT #
