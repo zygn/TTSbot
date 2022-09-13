@@ -57,6 +57,10 @@ class BotCommands(commands.Cog):
 
         text = message.content
 
+        if text == "":
+            log.debug(f"Message Ignored. message was empty.")
+            return
+
         if serve.prefix_use:
             if text.startswith(serve.prefix):
                 text = text[len(serve.prefix):]
