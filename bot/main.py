@@ -396,7 +396,7 @@ class BotCommands(commands.Cog):
             await channel.send("No voice channel found. Join the voice channel and try again.")
             return
 
-        await interaction.response.send_message(f"음성채널 <#{destination.id}> 으로 소환되었습니다.")
+        await interaction.response.send_message(f"음성채널 <#{destination.id}> 으로 소환되었습니다.", delete_after=20)
         return
 
 
