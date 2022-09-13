@@ -369,6 +369,32 @@ class BotCommands(commands.Cog):
             await interaction.response.send_message(f"피치가 **[{pitch}]** 로 설정되었습니다.", ephemeral=True)
             return
 
+    @nextcord.slash_command(description="내가 있는 음성채널로 소환", name="summon")
+    async def summon(
+            self,
+            interaction: Interaction
+    ):
+        guild = interaction.guild
+        author = interaction.user
+        channel = interaction.channel
+
+        voice_client = guild.voice_client
+
+        try:
+            destination = author.voice.channel
+            voice_client = await destination.connect()
+
+        except AttributeError:
+            log.error("No voice channel found. Join the voice channel and try again.")
+            await channel.send("No voice channel found. Join the voice channel and try again.")
+            return
+
+        await interaction.response.send_message(f"음성채널 <#!{destination.id}> 으로 이동되었습니다. ")
+        return
+
+    @nextcord.slash_command(description="")
+
+
     # EVENT #
     @commands.Cog.listener()
     async def on_ready(self):
