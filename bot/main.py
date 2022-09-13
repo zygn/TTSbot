@@ -382,21 +382,19 @@ class BotCommands(commands.Cog):
         voice_client = guild.voice_client
 
         try:
-            destination = author.voice.channel
-            voice_client = await destination.connect()
+            if voice_client is None:
+                destination = author.voice.channel
+                voice_client = await destination.connect()
+
+            else:
+                await voice_client.disconnect(force=True)
+                destination = author.voice.channel
+                voice_client = await destination.connect()
 
         except AttributeError:
             log.error("No voice channel found. Join the voice channel and try again.")
             await channel.send("No voice channel found. Join the voice channel and try again.")
             return
-
-        except nextcord.errors.ClientException:
-            log.debug("Try to disconnect and re-summoning")
-            voice_client = voice_client.disconnect(force=True)
-
-            await asyncio.sleep(0.05)
-            destination = author.voice.channel
-            voice_client = await destination.connect()
 
         await interaction.response.send_message(f"음성채널 <#{destination.id}> 으로 소환되었습니다.")
         return
