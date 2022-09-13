@@ -21,7 +21,7 @@ def os_compability():
 
 
 def recompile(input: str):
-    discord_embed = r'(<(@|#|:)\w+>)'
+    discord_embed = r'<([@|#|:])\w+>|<:\w+:\w+>'
     hyperlinks = r'((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*'
     bot_prefix = r'![\w.\-]+'
 
