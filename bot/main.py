@@ -390,7 +390,7 @@ class BotCommands(commands.Cog):
             await channel.send("No voice channel found. Join the voice channel and try again.")
             return
 
-        except nextcord.errors.ApplicationInvokeError:
+        except nextcord.errors.ClientException:
             log.debug("Try to disconnect and re-summoning")
             voice_client = voice_client.disconnect(force=True)
 
