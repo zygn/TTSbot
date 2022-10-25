@@ -70,6 +70,8 @@ class BotCommands(commands.Cog):
             log.debug(f"Message Ignored. message was detected in regular expression.")
             return
 
+        text = text.replace("\n", " ")
+
         log.info(f"{author} '{text}'")
 
         result, path = self.synth.synthesize_text(text, user, author.guild.id)
@@ -110,6 +112,10 @@ class BotCommands(commands.Cog):
                     voice_object,
                     after=lambda e: self.play_next(voice_client)
                 )
+
+                log.debug(f"Play finished. Unallocating memory. {voice_object}")
+                del voice_object
+
             except nextcord.opus.OpusNotLoaded:
                 log.error("Cannot load Opus library.")
                 await channel.send("Failed to load Opus library. Please contact the server admin.")
@@ -256,11 +262,14 @@ class BotCommands(commands.Cog):
     ):
         serve = self.get_server(interaction.guild.id)
         user = serve.get_user(interaction.user.id)
+        language = user['language']
 
-        if user:
+        if voice in self.synth.get_names(language):
             serve.set_user_voice(interaction.user.id, voice)
             self.servers[interaction.guild.id] = serve
             await interaction.response.send_message(f"음성이 **[{voice}]** 로 설정되었습니다.", ephemeral=True)
+        else:
+            await interaction.response.send_message(f"올바른 입력이 아닙니다. 확인 후 다시 선택해주세요.")
 
     @my_voice.on_autocomplete("voice")
     async def my_voice_auto_complete(
@@ -290,12 +299,14 @@ class BotCommands(commands.Cog):
         serve = self.get_server(interaction.guild.id)
         user = serve.get_user(interaction.user.id)
 
-        if user:
+        if language in self.synth.get_language():
             serve.set_user_language(interaction.user.id, language)
             serve.set_user_voice(interaction.user.id, self.synth.get_names(language)[0])
             self.servers[interaction.guild.id] = serve
             await interaction.response.send_message(f"언어가 **[{language}]** 로 설정되었습니다.", ephemeral=True)
             return
+        else:
+            await interaction.response.send_message(f"올바른 입력이 아닙니다. 확인 후 다시 선택해주세요.")
 
     @my_language.on_autocomplete("language")
     async def my_language_auto_complete(
@@ -315,19 +326,19 @@ class BotCommands(commands.Cog):
             interaction: Interaction,
             speed: str = SlashOption(
                 name="speed",
-                description="원하는 속도를 입력 해 주세요. [0.25 ~ 4.0]"
+                description="원하는 속도를 입력 해 주세요. [0.75 ~ 1.25]"
             )
     ):
 
         try:
             speed = float(speed)
         except ValueError:
-            await interaction.response.send_message("올바른 응답이 아닙니다. 실수 범위를 입력 해 주세요. [0.25 ~ 4.0]",
+            await interaction.response.send_message("올바른 응답이 아닙니다. 실수 범위를 입력 해 주세요. [0.75 ~ 1.25]",
                                                     ephemeral=True)
             return
 
-        if speed < 0.25 or speed > 4.0:
-            await interaction.response.send_message("올바른 응답이 아닙니다. 해당 범위안의 값을 입력 해 주세요. [0.25 ~ 4.0]",
+        if speed < 0.75 or speed > 1.25:
+            await interaction.response.send_message("올바른 응답이 아닙니다. 해당 범위안의 값을 입력 해 주세요. [0.75 ~ 1.25]",
                                                     ephemeral=True)
             return
 
@@ -346,18 +357,18 @@ class BotCommands(commands.Cog):
             interaction: Interaction,
             pitch: str = SlashOption(
                 name="pitch",
-                description="원하는 피치를 입력 해 주세요. [-16.0 ~ 16.0]"
+                description="원하는 피치를 입력 해 주세요. [-4.0 ~ 4.0]"
             )
     ):
         try:
             pitch = float(pitch)
         except ValueError:
-            await interaction.response.send_message("올바른 응답이 아닙니다. 실수 범위를 입력 해 주세요. [-16.0 ~ 16.0]",
+            await interaction.response.send_message("올바른 응답이 아닙니다. 실수 범위를 입력 해 주세요. [-4.0 ~ 4.0]",
                                                     ephemeral=True)
             return
 
-        if pitch < -16.0 or pitch > 16.0:
-            await interaction.response.send_message("올바른 응답이 아닙니다. 해당 범위안의 값을 입력 해 주세요. [-16.0 ~ 16.0]",
+        if pitch < -4.0 or pitch > 4.0:
+            await interaction.response.send_message("올바른 응답이 아닙니다. 해당 범위안의 값을 입력 해 주세요. [-4.0 ~ 4.0]",
                                                     ephemeral=True)
             return
 
