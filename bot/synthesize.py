@@ -14,7 +14,7 @@ class Synthesize:
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = conf.get('BOT', 'GCP_CREDENTIALS')
         self.client = texttospeech.TextToSpeechClient()
         self.block_data = ['ko-KR-Standard-D']
-        self.voices = self._voice_list()ß
+        self.voices = self._voice_list()
 
     def _voice_list(self):
         log.debug("Generating voice lists.")
