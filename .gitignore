@@ -10,3 +10,6 @@ config.ini
 guild.json
 
 voice_cache
+*.service
+.claude
+CLAUDE.md

@@ -17,6 +17,8 @@ class DatabaseModel:
         self.default_pitch = 1.0
 
         self.users = dict()
+        self.replacement = dict()
+        self.soundboard: dict[str, str] = dict()
 
         self._auto_load()
         self._save()
@@ -52,6 +54,10 @@ class DatabaseModel:
                 self.default_speed = data['default_speed']
                 self.default_pitch = data['default_pitch']
                 self.users = data['users']
+                self.replacement = data['replacement']
+                self.soundboard = data['soundboard']
+                # sort by key length is longer
+                self.replacement = dict(sorted(self.replacement.items(), key=lambda x: len(x[0]), reverse=True))
 
         except json.JSONDecodeError:
             self._save()
@@ -130,3 +136,38 @@ class DatabaseModel:
 
         self.users[user_id]["pitch"] = pitch
         self._save()
+
+    def get_replacement(self, key: str):
+        return self.replacement.get(key, None)
+    
+    def set_replacement(self, key: str, value: str):
+        self.replacement[key] = value
+        self.replacement = dict(sorted(self.replacement.items(), key=lambda x: len(x[0]), reverse=True))
+        self._save()
+    
+    def remove_replacement(self, key: str):
+        if key in self.replacement:
+            del self.replacement[key]
+            self._save()
+    
+    def get_all_replacement(self):
+        return self.replacement
+    
+    def get_soundboard(self, key: str) -> os.PathLike | str | None:
+        return self.soundboard.get(key, None)
+
+    def set_soundboard(self, key: str, path: os.PathLike | str):
+        if os.path.exists(path):
+            self.soundboard[key] = os.path.abspath(path)
+            self._save()
+        else:
+            raise FileNotFoundError("Soundboard file not found.")
+
+    def remove_soundboard(self, key: str):
+        if key in self.soundboard:
+            del self.soundboard[key]
+            self._save()
+        
+
+    def get_all_soundboard(self):
+        return self.soundboard

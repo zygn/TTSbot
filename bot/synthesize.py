@@ -11,7 +11,15 @@ log = logger_init(__name__)
 
 class Synthesize:
     def __init__(self, conf):
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = conf.get('BOT', 'GCP_CREDENTIALS')
+        GCP_CREDENTIALS = conf.get('BOT', 'GCP_CREDENTIALS')
+        if not os.path.exists(GCP_CREDENTIALS):
+            log.error("GCP Credentials file not found. Please check your configuration.")
+            raise FileNotFoundError("GCP Credentials file not found.")
+        
+        GCP_CREDENTIALS = os.path.abspath(GCP_CREDENTIALS)
+        log.debug(f"GCP Credentials file found: {GCP_CREDENTIALS}")
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = GCP_CREDENTIALS
+        
         self.client = texttospeech.TextToSpeechClient()
         self.block_data = ['ko-KR-Standard-D']
         self.voices = self._voice_list()
@@ -49,7 +57,7 @@ class Synthesize:
         return sorted(list(self.voices.keys()))
 
     def get_names(self, language: str):
-        return [voice['name'] for voice in self.voices[language]]
+        return [voice['name'] for voice in self.voices[language]][:25]
 
     def synthesize_text(self, text, user_model: dict, server_id: int):
         file_path = f"guilds/{server_id}/voice/{self._md5_generate(text, user_model)}.mp3"
@@ -76,7 +84,7 @@ class Synthesize:
             response = self.client.synthesize_speech(
                 input=synthesis_input, voice=voice, audio_config=audio_config
             )
-            t1 = round(time.time()-t0, 4) * 1000
+            t1 = round((time.time()-t0) * 1000, 4)
             log.debug("Got responses. ({}ms) saving voice data.".format(t1))
 
             with open(file_path, 'wb') as out:
