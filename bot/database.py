@@ -158,7 +158,7 @@ class DatabaseModel:
 
     def set_soundboard(self, key: str, path: os.PathLike | str):
         if os.path.exists(path):
-            self.soundboard[key] = os.path.abspath(path)
+            self.soundboard[key] = str(path)
             self._save()
         else:
             raise FileNotFoundError("Soundboard file not found.")

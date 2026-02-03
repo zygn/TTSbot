@@ -3,7 +3,7 @@ from collections import deque
 from typing import Optional, Dict
 from datetime import datetime
 import os
-import nextcord
+
 import re
 
 # import discord as nextcord

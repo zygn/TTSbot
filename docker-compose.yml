@@ -1,0 +1,14 @@
+services:
+  ttsbot:
+    container_name: ttsbot
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ttsbot:latest
+    volumes:
+      - ./:/app
+      - ./guilds:/app/guilds
+      - ./key.json:/app/key.json
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

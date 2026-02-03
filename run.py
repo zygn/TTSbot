@@ -1,7 +1,4 @@
-import os
 import configparser
-import json
-
 import bot.main as ttsbot
 
 
